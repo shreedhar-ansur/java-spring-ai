@@ -1,13 +1,18 @@
 package com.example.openai.demo.service;
 
+import com.example.openai.demo.model.Country;
 import com.openai.client.OpenAIClient;
 import com.openai.models.chat.completions.ChatCompletion;
 import com.openai.models.chat.completions.ChatCompletionCreateParams;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Flux;
+
+import java.util.List;
 
 @Component
 public class ChatClientService {
@@ -22,12 +27,12 @@ public class ChatClientService {
   @Value("classpath:/templates/systemPromptTemplate.st")
   private Resource systemPromptTemplate;
 
-  public ChatClientService(@Qualifier("openAiChatClient") ChatClient chatClientBuilder,
-                           @Qualifier("ollamaChatClient") ChatClient ollamaChatClientBuilder,
+  public ChatClientService(@Qualifier("openAiChatClient") ChatClient openAiChatClient,
+                           @Qualifier("ollamaChatClient") ChatClient ollamaChatClient,
                            @Qualifier("ollamaChatClientWithDefaultSystemMessage") ChatClient ollamaChatClientWithDefaultSystemMessage,
                            OpenAIClient client) {
-    this.openAiChatClient = chatClientBuilder;
-    this.ollamaAiChatClient = ollamaChatClientBuilder;
+    this.openAiChatClient = openAiChatClient;
+    this.ollamaAiChatClient = ollamaChatClient;
     this.ollamaAiChatClientWithDefaultSystem = ollamaChatClientWithDefaultSystemMessage;
     this.client = client;
   }
@@ -76,6 +81,21 @@ public class ChatClientService {
   public String askAssistantWithSystemPromptTemplate(String message) {
     var prompt = ollamaAiChatClientWithDefaultSystem.prompt(message).system(systemPromptTemplate);
     return prompt.call().content();
+  }
+
+  public Flux<String> askStream(String message) {
+    return ollamaAiChatClient
+            .prompt(message)
+            .stream()
+            .content();
+  }
+
+  public List<Country.CountryCities> askForModel(String message) {
+    return ollamaAiChatClient
+            .prompt()
+            .user(message)
+            .call()
+            .entity(new ParameterizedTypeReference<>() {});
   }
 
   public String ask(String message) {
