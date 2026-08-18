@@ -6,6 +6,9 @@ import com.openai.models.chat.completions.ChatCompletion;
 import com.openai.models.chat.completions.ChatCompletionCreateParams;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.document.Document;
+import org.springframework.ai.vectorstore.SearchRequest;
+import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
@@ -14,6 +17,7 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 public class ChatClientService {
@@ -22,20 +26,25 @@ public class ChatClientService {
   private final ChatClient ollamaAiChatClient;
   private final ChatClient ollamaAiChatClientWithDefaultSystem;
   private final OpenAIClient client;
+  private final VectorStore vectorStore;
   @Value("${openai.model}")
   private String model;
 
   @Value("classpath:/templates/systemPromptTemplate.st")
   private Resource systemPromptTemplate;
 
+  /*@Value("classpath:/templates/systemPromptTemplateRag.st")
+  private Resource systemPromptTemplateRag;*/
+
   public ChatClientService(@Qualifier("openAiChatClient") ChatClient openAiChatClient,
                            @Qualifier("ollamaChatClient") ChatClient ollamaChatClient,
                            @Qualifier("ollamaChatClientWithDefaultSystemMessage") ChatClient ollamaChatClientWithDefaultSystemMessage,
-                           OpenAIClient client) {
+                           OpenAIClient client, VectorStore vectorStore) {
     this.openAiChatClient = openAiChatClient;
     this.ollamaAiChatClient = ollamaChatClient;
     this.ollamaAiChatClientWithDefaultSystem = ollamaChatClientWithDefaultSystemMessage;
     this.client = client;
+    this.vectorStore = vectorStore;
   }
 
   public String askOpenAiClient(String prompt) {
@@ -97,6 +106,20 @@ public class ChatClientService {
             .user(message)
             .call()
             .entity(new ParameterizedTypeReference<>() {});
+  }
+
+  public String askUsingRag(String message, String userId) {
+    /*List<Document> similarDocs = vectorStore.similaritySearch(SearchRequest.builder().query(message).similarityThreshold(0.5).topK(3).build());
+    String similarContext = similarDocs.stream()
+            .map(Document::getText)
+            .collect(Collectors.joining(System.lineSeparator()));*/
+    return ollamaAiChatClient
+            .prompt()
+            //.system(promptSystemSpec -> promptSystemSpec.text(systemPromptTemplateRag).param("documents", similarContext))
+            .advisors(advisorSpec -> advisorSpec.param(ChatMemory.CONVERSATION_ID, userId))
+            .user(message)
+            .call()
+            .content();
   }
 
   public String ask(String message) {

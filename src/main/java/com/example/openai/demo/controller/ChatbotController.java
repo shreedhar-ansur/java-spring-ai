@@ -33,6 +33,11 @@ public class ChatbotController {
     return ResponseEntity.ok(chatClientService.askForModel(message));
   }
 
+  @GetMapping("/rag")
+  public ResponseEntity<String> getResponseRag(@RequestParam String message, @RequestParam String userId) {
+    return ResponseEntity.ok(chatClientService.askUsingRag(message, userId));
+  }
+
   @PostMapping
   public String postChatMessage(@RequestBody String message) {
     return "Message received: " + message;
