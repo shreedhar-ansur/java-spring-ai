@@ -1,6 +1,8 @@
 package com.example.openai.demo.service;
 
 import com.example.openai.demo.model.Country;
+import com.example.openai.demo.tools.HelpDeskTools;
+import com.example.openai.demo.tools.TimeTools;
 import com.openai.client.OpenAIClient;
 import com.openai.models.chat.completions.ChatCompletion;
 import com.openai.models.chat.completions.ChatCompletionCreateParams;
@@ -17,6 +19,7 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Component
@@ -25,6 +28,7 @@ public class ChatClientService {
   private final ChatClient openAiChatClient;
   private final ChatClient ollamaAiChatClient;
   private final ChatClient ollamaAiChatClientWithDefaultSystem;
+  private final ChatClient ollamahelpDeskChatClient;
   private final OpenAIClient client;
   private final VectorStore vectorStore;
   @Value("${openai.model}")
@@ -36,15 +40,23 @@ public class ChatClientService {
   /*@Value("classpath:/templates/systemPromptTemplateRag.st")
   private Resource systemPromptTemplateRag;*/
 
+  @Value("classpath:/templates/systemPromptTemplateHelpDesk.st")
+  private Resource systemPromptTemplateHelpDesk;
+
+  private final HelpDeskTools helpDeskTools;
+
   public ChatClientService(@Qualifier("openAiChatClient") ChatClient openAiChatClient,
                            @Qualifier("ollamaChatClient") ChatClient ollamaChatClient,
+                           @Qualifier("ollamahelpDeskChatClient") ChatClient ollamahelpDeskChatClient,
                            @Qualifier("ollamaChatClientWithDefaultSystemMessage") ChatClient ollamaChatClientWithDefaultSystemMessage,
-                           OpenAIClient client, VectorStore vectorStore) {
+                           OpenAIClient client, VectorStore vectorStore, HelpDeskTools helpDeskTools) {
     this.openAiChatClient = openAiChatClient;
     this.ollamaAiChatClient = ollamaChatClient;
+    this.ollamahelpDeskChatClient = ollamahelpDeskChatClient;
     this.ollamaAiChatClientWithDefaultSystem = ollamaChatClientWithDefaultSystemMessage;
     this.client = client;
     this.vectorStore = vectorStore;
+    this.helpDeskTools = helpDeskTools;
   }
 
   public String askOpenAiClient(String prompt) {
@@ -118,6 +130,27 @@ public class ChatClientService {
             //.system(promptSystemSpec -> promptSystemSpec.text(systemPromptTemplateRag).param("documents", similarContext))
             .advisors(advisorSpec -> advisorSpec.param(ChatMemory.CONVERSATION_ID, userId))
             .user(message)
+            .call()
+            .content();
+  }
+
+  public String askUsingTools(String message, String userId) {
+    return ollamaAiChatClient
+            .prompt()
+            .advisors(advisorSpec -> advisorSpec.param(ChatMemory.CONVERSATION_ID, userId))
+            .user(message)
+            .call()
+            .content();
+  }
+
+  public String askUsingHelpDeskTools(String message, String username) {
+    return ollamahelpDeskChatClient
+            .prompt()
+            .system(systemPromptTemplateHelpDesk)
+            .advisors(advisorSpec -> advisorSpec.param(ChatMemory.CONVERSATION_ID, username))
+            .user(message)
+            .tools(helpDeskTools)
+            .toolContext(Map.of("username", username))
             .call()
             .content();
   }

@@ -3,6 +3,7 @@ package com.example.openai.demo.config;
 import com.example.openai.demo.advisor.TokenUsageAuditAdvisor;
 import com.example.openai.demo.rag.PIIMaskingDocumentPostProcessor;
 import com.example.openai.demo.rag.WebSearchDocumentRetriever;
+import com.example.openai.demo.tools.TimeTools;
 import org.springframework.ai.chat.cache.semantic.SemanticCacheAdvisor;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.client.advisor.MessageChatMemoryAdvisor;
@@ -18,6 +19,8 @@ import org.springframework.ai.openai.OpenAiChatModel;
 import org.springframework.ai.rag.advisor.RetrievalAugmentationAdvisor;
 import org.springframework.ai.rag.preretrieval.query.transformation.TranslationQueryTransformer;
 import org.springframework.ai.rag.retrieval.search.VectorStoreDocumentRetriever;
+import org.springframework.ai.tool.execution.DefaultToolExecutionExceptionProcessor;
+import org.springframework.ai.tool.execution.ToolExecutionExceptionProcessor;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
@@ -63,6 +66,11 @@ public class ChatClientConfig {
   }
 
   /*@Bean
+  ToolExecutionExceptionProcessor toolExecutionExceptionProcessor() {
+    return new DefaultToolExecutionExceptionProcessor(true);
+  }*/
+
+  /*@Bean
   public ChatClient ollamaChatClient(OllamaChatModel ollamaChatModel) {
     return ChatClient
             .builder(ollamaChatModel)
@@ -70,7 +78,7 @@ public class ChatClientConfig {
             .defaultAdvisors(new SimpleLoggerAdvisor())
             .build();
   }*/
-  @Bean
+  /*@Bean
   public ChatClient ollamaChatClient(OllamaChatModel ollamaChatModel, ChatMemory chatMemory, RetrievalAugmentationAdvisor retrievalAugmentationAdvisor, RestClient.Builder restClientBuilder, SemanticCacheAdvisor semanticCacheAdvisor) {
     Advisor memoryAdvisor = MessageChatMemoryAdvisor.builder(chatMemory).build();
     //var webSearchDocumentRetreiver = RetrievalAugmentationAdvisor.builder().documentRetriever(WebSearchDocumentRetriever.builder().restClientBuilder(restClientBuilder).maxResults(5).build()).build();
@@ -81,7 +89,30 @@ public class ChatClientConfig {
             //.defaultAdvisors(new TokenUsageAuditAdvisor(), new SimpleLoggerAdvisor(), memoryAdvisor, webSearchDocumentRetreiver)
             .defaultAdvisors(new TokenUsageAuditAdvisor(), new SimpleLoggerAdvisor(), memoryAdvisor, retrievalAugmentationAdvisor, semanticCacheAdvisor)
             .build();
+  }*/
+
+  @Bean
+  public ChatClient ollamaChatClient(OllamaChatModel ollamaChatModel, ChatMemory chatMemory, TimeTools timeTools) {
+    Advisor memoryAdvisor = MessageChatMemoryAdvisor.builder(chatMemory).build();
+    return ChatClient
+            .builder(ollamaChatModel)
+            .defaultOptions(OllamaChatOptions.builder())
+            .defaultAdvisors(new TokenUsageAuditAdvisor(), new SimpleLoggerAdvisor(), memoryAdvisor)
+            .defaultTools(timeTools)
+            .build();
   }
+
+  @Bean
+  public ChatClient ollamahelpDeskChatClient(OllamaChatModel ollamaChatModel, ChatMemory chatMemory, TimeTools timeTools) {
+    Advisor memoryAdvisor = MessageChatMemoryAdvisor.builder(chatMemory).build();
+    return ChatClient
+            .builder(ollamaChatModel)
+            .defaultOptions(OllamaChatOptions.builder())
+            .defaultAdvisors(new TokenUsageAuditAdvisor(), new SimpleLoggerAdvisor(), memoryAdvisor)
+            .defaultTools(timeTools)
+            .build();
+  }
+
 
   @Bean
   public ChatClient ollamaChatClientWithDefaultSystemMessage(OllamaChatModel ollamaChatModel) {

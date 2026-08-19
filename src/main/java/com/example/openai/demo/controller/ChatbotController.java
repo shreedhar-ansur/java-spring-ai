@@ -35,7 +35,12 @@ public class ChatbotController {
 
   @GetMapping("/rag")
   public ResponseEntity<String> getResponseRag(@RequestParam String message, @RequestParam String userId) {
-    return ResponseEntity.ok(chatClientService.askUsingRag(message, userId));
+    return ResponseEntity.ok(chatClientService.askUsingTools(message, userId));
+  }
+
+  @GetMapping("/helpdesk")
+  public ResponseEntity<String> getResponseHelpDesk(@RequestParam String message, @RequestParam String username) {
+    return ResponseEntity.ok(chatClientService.askUsingHelpDeskTools(message, username));
   }
 
   @PostMapping
