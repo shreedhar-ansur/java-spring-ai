@@ -8,7 +8,9 @@ import com.openai.models.chat.completions.ChatCompletion;
 import com.openai.models.chat.completions.ChatCompletionCreateParams;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.ai.chat.memory.ChatMemory;
+import org.springframework.ai.chat.prompt.ChatOptions;
 import org.springframework.ai.document.Document;
+import org.springframework.ai.openai.OpenAiChatOptions;
 import org.springframework.ai.vectorstore.SearchRequest;
 import org.springframework.ai.vectorstore.VectorStore;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -37,8 +39,8 @@ public class ChatClientService {
   @Value("classpath:/templates/systemPromptTemplate.st")
   private Resource systemPromptTemplate;
 
-  /*@Value("classpath:/templates/systemPromptTemplateRag.st")
-  private Resource systemPromptTemplateRag;*/
+  @Value("classpath:/templates/systemPromptTemplateRag.st")
+  private Resource systemPromptTemplateRag;
 
   @Value("classpath:/templates/systemPromptTemplateHelpDesk.st")
   private Resource systemPromptTemplateHelpDesk;
@@ -121,13 +123,13 @@ public class ChatClientService {
   }
 
   public String askUsingRag(String message, String userId) {
-    /*List<Document> similarDocs = vectorStore.similaritySearch(SearchRequest.builder().query(message).similarityThreshold(0.5).topK(3).build());
+    List<Document> similarDocs = vectorStore.similaritySearch(SearchRequest.builder().query(message).similarityThreshold(0.5).topK(3).build());
     String similarContext = similarDocs.stream()
             .map(Document::getText)
-            .collect(Collectors.joining(System.lineSeparator()));*/
+            .collect(Collectors.joining(System.lineSeparator()));
     return ollamaAiChatClient
             .prompt()
-            //.system(promptSystemSpec -> promptSystemSpec.text(systemPromptTemplateRag).param("documents", similarContext))
+            .system(promptSystemSpec -> promptSystemSpec.text(systemPromptTemplateRag).param("documents", similarContext))
             .advisors(advisorSpec -> advisorSpec.param(ChatMemory.CONVERSATION_ID, userId))
             .user(message)
             .call()
@@ -162,6 +164,16 @@ public class ChatClientService {
             .advisors(advisorSpec -> advisorSpec.param(ChatMemory.CONVERSATION_ID, "default"))
             .call()
             .content();
+  }
+
+  public String askOpenAiForTesting(String message) {
+    return openAiChatClient
+            .prompt()
+            .user(message)
+            .stream()
+            .content()
+            .collect(Collectors.joining())
+            .block();
   }
 
 }

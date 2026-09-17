@@ -35,7 +35,8 @@ public class ChatbotController {
 
   @GetMapping("/rag")
   public ResponseEntity<String> getResponseRag(@RequestParam String message, @RequestParam String userId) {
-    return ResponseEntity.ok(chatClientService.askUsingTools(message, userId));
+    //return ResponseEntity.ok(chatClientService.askUsingTools(message, userId));
+    return ResponseEntity.ok(chatClientService.askUsingRag(message, userId));
   }
 
   @GetMapping("/helpdesk")
@@ -46,5 +47,10 @@ public class ChatbotController {
   @PostMapping
   public String postChatMessage(@RequestBody String message) {
     return "Message received: " + message;
+  }
+
+  @GetMapping("/test")
+  public String askOpenAiForTesting(@RequestParam String message) {
+    return chatClientService.askOpenAiForTesting(message);
   }
 }

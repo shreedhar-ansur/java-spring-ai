@@ -31,12 +31,12 @@ import org.springframework.web.client.RestClient;
 public class ChatClientConfig {
 
   @Bean
-  ChatMemory chatMemory(JdbcChatMemoryRepository jdbcChatMemoryRepository) {
+  public ChatMemory chatMemory(JdbcChatMemoryRepository jdbcChatMemoryRepository) {
     return MessageWindowChatMemory.builder().maxMessages(20).chatMemoryRepository(jdbcChatMemoryRepository).build();
   }
 
   @Bean
-  RetrievalAugmentationAdvisor retrievalAugmentationAdvisor(VectorStore vectorStore, @Qualifier("ollamaChatClientBuilder") ChatClient.Builder chatClientBuilder) {
+  public RetrievalAugmentationAdvisor retrievalAugmentationAdvisor(VectorStore vectorStore, @Qualifier("ollamaChatClientBuilder") ChatClient.Builder chatClientBuilder) {
     return RetrievalAugmentationAdvisor.builder()
             .queryTransformers(TranslationQueryTransformer.builder().chatClientBuilder(chatClientBuilder.clone()).targetLanguage("english").build())
             .documentRetriever(VectorStoreDocumentRetriever.builder().vectorStore(vectorStore).topK(3).similarityThreshold(0.5).build())
