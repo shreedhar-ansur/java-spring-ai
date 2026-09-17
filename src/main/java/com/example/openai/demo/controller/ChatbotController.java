@@ -50,7 +50,7 @@ public class ChatbotController {
   }
 
   @GetMapping("/test")
-  public String askOpenAiForTesting(@RequestParam String message) {
-    return chatClientService.askOpenAiForTesting(message);
+  public String askOpenAi(@RequestParam String message) {
+    return chatClientService.askOpenAi(message);
   }
 }

@@ -166,7 +166,7 @@ public class ChatClientService {
             .content();
   }
 
-  public String askOpenAiForTesting(String message) {
+  public String askOpenAi(String message) {
     return openAiChatClient
             .prompt()
             .user(message)
